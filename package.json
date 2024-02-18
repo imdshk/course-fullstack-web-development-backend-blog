@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/imdshk/course-fullstack-web-development-backend-blog-list.git"
+    "url": "git+https://github.com/imdshk/course-fullstack-web-development-backend-blog.git"
   },
   "author": "Imaad Shaik",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/imdshk/course-fullstack-web-development-backend/issues"
+    "url": "https://github.com/imdshk/course-fullstack-web-development-backend-blog/issues"
   },
-  "homepage": "https://github.com/imdshk/course-fullstack-web-development-backend#readme",
+  "homepage": "https://github.com/imdshk/course-fullstack-web-development-backend-blog#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.4",

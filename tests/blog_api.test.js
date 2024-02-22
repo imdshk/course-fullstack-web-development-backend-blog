@@ -29,13 +29,35 @@ test("there are 2 blogs", async () => {
     assert.strictEqual(response.body.length, helper.initialBlogs.length)
 })
 
-test.only("check whether unique identifier proterty is returned as id", async () => {
+test("check whether unique identifier proterty is returned as id", async () => {
     const response = await  api.get("/api/blogs")
     let hasIdProperty = false
     if (response.body[0].id) {
         hasIdProperty = true
     }
     assert.strictEqual(hasIdProperty, true)
+})
+
+test.only("a valid blog is added", async () => {
+    const newBlog = {
+        "title": "Test blog 3",
+        "author": "Imaad Shaik",
+        "url": "",
+        "likes": 1
+    }
+
+    await api
+        .post("/api/blogs")
+        .send(newBlog)
+        .expect(201)
+        .expect("Content-Type", /application\/json/)
+
+    const response = await api.get("/api/blogs")
+
+    const titles = response.body.map(r => r.title)
+
+    assert.strictEqual(response.body.length, helper.initialBlogs.length + 1)
+    assert(titles.includes("Test blog 3"))
 })
 
 after(async () => {

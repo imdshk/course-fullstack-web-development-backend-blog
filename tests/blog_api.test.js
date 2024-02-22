@@ -16,17 +16,26 @@ beforeEach(async () => {
     await noteObject.save()
 })
 
-test.only("blogs are returned as json", async () => {
+test("blogs are returned as json", async () => {
     await api
         .get("/api/blogs")
         .expect(200)
         .expect("Content-type", /application\/json/)
 })
 
-test.only("there are 2 blogs", async () => {
+test("there are 2 blogs", async () => {
     const response = await api.get("/api/blogs")
 
     assert.strictEqual(response.body.length, helper.initialBlogs.length)
+})
+
+test.only("check whether unique identifier proterty is returned as id", async () => {
+    const response = await  api.get("/api/blogs")
+    let hasIdProperty = false
+    if (response.body[0].id) {
+        hasIdProperty = true
+    }
+    assert.strictEqual(hasIdProperty, true)
 })
 
 after(async () => {

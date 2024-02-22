@@ -60,11 +60,11 @@ test("a valid blog is added", async () => {
     assert(titles.includes("Test blog 3"))
 })
 
-test.only("adding a blog without likes", async () => {
+test("adding a blog without likes", async () => {
     const newBlog = {
         "title": "Test blog without likes",
         "author": "Imaad Shaik",
-        "url": ""
+        "url": "abcd"
     }
 
     const response = await api
@@ -74,6 +74,18 @@ test.only("adding a blog without likes", async () => {
         .expect("Content-Type", /application\/json/)
 
     assert.strictEqual(response.body.likes, 0)
+})
+
+test.only("adding a blog without title or url", async () => {
+    const newBlog = {
+        "title": "",
+        "author": "Imaad Shaik",
+    }
+
+    await api
+        .post("/api/blogs")
+        .send(newBlog)
+        .expect(400)
 })
 
 after(async () => {

@@ -4,13 +4,13 @@ const initialBlogs = [
     {
         "title": "Test blog 1",
         "author": "Imaad Shaik",
-        "url": "",
+        "url": "url1",
         "likes": 5
     },
     {
         "title": "Test blog 2",
         "author": "Imaad Shaik",
-        "url": "",
+        "url": "url1",
         "likes": 1
     }
 ]

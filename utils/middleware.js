@@ -29,6 +29,8 @@ const errorHandler = (error, request, response, next) => {
         return response.status(400).json({ error: "expected 'username' to be unique" })
     } else if (error.name === "JsonWebTokenError" && error.message.includes("invalid signature")) {
         return response.status(401).json({ error: "invalid token" })
+    } else if (error.name === "TypeError" && error.message.includes("Cannot read properties of null (reading 'user')")) {
+        return response.status(404).json({ error: "blog not found" })
     }
 
     next(error)

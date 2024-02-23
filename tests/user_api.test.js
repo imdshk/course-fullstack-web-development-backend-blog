@@ -19,8 +19,14 @@ describe("when there is initially one user in the db", () => {
             name: "superuser",
             passwordHash
         })
+        const user2 = new User({
+            username: "test",
+            name: "testuser",
+            passwordHash
+        })
 
         await user.save()
+        await user2.save()
     })
 
     test("creation of user succeeds with status code 201", async () => {

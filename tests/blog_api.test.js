@@ -5,17 +5,46 @@ const supertest = require("supertest")
 const app = require("../app")
 const helper = require("./test_helper")
 const Blog = require("../models/blog")
+const User = require("../models/user")
 
 const api = supertest(app)
 
-describe("When there is initially some blogs saved", () => {
+describe("When there is initially some blogs saved", async () => {
     beforeEach(async () => {
         await Blog.deleteMany({})
-        let noteObject = new Blog(helper.initialBlogs[0])
-        await noteObject.save()
-        noteObject = new Blog(helper.initialBlogs[1])
-        await noteObject.save()
+        const users = await User.find({})
+
+        let blogObject = new Blog(helper.initialBlogs[0])
+        blogObject.user = users[0]._id.toString()
+        let blogSaved = await blogObject.save()
+        let blogId = blogSaved._id.toString()
+        let user = await User.findById(blogObject.user)
+        user.blogs = []
+        await user.save()
+        user.blogs = user.blogs.concat(blogId)
+        await user.save()
+
+        blogObject = new Blog(helper.initialBlogs[1])
+        blogObject.user = users[1]._id.toString()
+        blogSaved = await blogObject.save()
+        blogId = blogSaved._id.toString()
+        user = await User.findById(blogObject.user)
+        user.blogs = []
+        await user.save()
+        user.blogs = user.blogs.concat(blogId)
+        await user.save()
     })
+
+    const user = {
+        "username": "test",
+        "password": "secret"
+    }
+
+    const token = await api
+        .post("/api/login")
+        .send(user)
+        .expect(200)
+        .expect("Content-Type", /application\/json/)
 
     test("blogs are returned as json", async () => {
         await api
@@ -51,6 +80,7 @@ describe("When there is initially some blogs saved", () => {
             await api
                 .post("/api/blogs")
                 .send(newBlog)
+                .set({ "Authorization": `Bearer ${token.body.token}` })
                 .expect(201)
                 .expect("Content-Type", /application\/json/)
 
@@ -60,6 +90,29 @@ describe("When there is initially some blogs saved", () => {
 
             assert.strictEqual(response.body.length, helper.initialBlogs.length + 1)
             assert(titles.includes("Test blog 3"))
+        })
+
+        test("an unauthorized blog is added", async () => {
+            const newBlog = {
+                "title": "Test blog unauthorized",
+                "author": "Imaad Shaik",
+                "url": "url4",
+                "likes": 1
+            }
+
+            await api
+                .post("/api/blogs")
+                .send(newBlog)
+                .set({ "Authorization": "" })
+                .expect(401)
+                .expect("Content-Type", /application\/json/)
+
+            const response = await api.get("/api/blogs")
+
+            const titles = response.body.map(r => r.title)
+
+            assert.strictEqual(response.body.length, helper.initialBlogs.length)
+            assert(!titles.includes("Test blog unauthorized"))
         })
 
         test("adding a blog without likes", async () => {
@@ -72,6 +125,7 @@ describe("When there is initially some blogs saved", () => {
             const response = await api
                 .post("/api/blogs")
                 .send(newBlog)
+                .set({ "Authorization": `Bearer ${token.body.token}` })
                 .expect(201)
                 .expect("Content-Type", /application\/json/)
 
@@ -87,39 +141,55 @@ describe("When there is initially some blogs saved", () => {
             await api
                 .post("/api/blogs")
                 .send(newBlog)
+                .set({ "Authorization": `Bearer ${token.body.token}` })
                 .expect(400)
         })
+    })
 
-        describe("deletion of a blog", () => {
-            test("succeed with status code 204 if blog is deleted", async () => {
-                const blogAtStart = await helper.blogsInDb()
-                const blogToDelete = blogAtStart[0]
+    describe("deletion of a blog", () => {
+        test("succeed with status code 204 if blog is deleted by authorized user", async () => {
+            const blogAtStart = await helper.blogsInDb()
+            const blogToDelete = blogAtStart[1]
 
-                await api
-                    .delete(`/api/blogs/${blogToDelete.id}`)
-                    .expect(204)
+            await api
+                .delete(`/api/blogs/${blogToDelete.id}`)
+                .set({ "Authorization": `Bearer ${token.body.token}` })
+                .expect(204)
 
-                const blogsAtEnd = await helper.blogsInDb()
+            const blogsAtEnd = await helper.blogsInDb()
 
-                assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1)
-            })
+            assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length - 1)
         })
 
-        describe("updating a blog post", () => {
-            test("succeed with status code 200 and return back the updated content", async () => {
-                const blogsAtStart = await helper.blogsInDb()
-                const blogToUpdate = blogsAtStart[0]
+        test("fails with status code 401 if blog is deleted by unauthorized user", async () => {
+            const blogAtStart = await helper.blogsInDb()
+            const blogToDelete = blogAtStart[0]
 
-                blogToUpdate.likes = 50
+            await api
+                .delete(`/api/blogs/${blogToDelete.id}`)
+                .set({ "Authorization": `Bearer ${token.body.token}` })
+                .expect(401)
 
-                await api
-                    .put(`/api/blogs/${blogToUpdate.id}`)
-                    .send(blogToUpdate)
-                    .expect(200)
+            const blogsAtEnd = await helper.blogsInDb()
 
-                const updatedBlog = await helper.getBlogById(blogToUpdate.id)
-                assert.strictEqual(updatedBlog.likes, 50)
-            })
+            assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
+        })
+    })
+
+    describe("updating a blog post", () => {
+        test("succeed with status code 200 and return back the updated content", async () => {
+            const blogsAtStart = await helper.blogsInDb()
+            const blogToUpdate = blogsAtStart[0]
+
+            blogToUpdate.likes = 50
+
+            await api
+                .put(`/api/blogs/${blogToUpdate.id}`)
+                .send(blogToUpdate)
+                .expect(200)
+
+            const updatedBlog = await helper.getBlogById(blogToUpdate.id)
+            assert.strictEqual(updatedBlog.likes, 50)
         })
     })
 })
